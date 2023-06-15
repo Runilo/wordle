@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Lava Wordle</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.min.js"></script>
+    <style>
+        #app {
+            text-align: center;
+        }
+
+        .grid {
+            width: 300px;
+            margin: 0 auto;
+        }
+        .grid input {
+            width: 20%;
+            box-sizing: border-box;
+            font-size: 2rem;
+            text-align: center;
+        }
+
+        .grid input[data-out-of-word="true"] {
+            background-color: gray;
+        }
+
+        .grid input[data-inword="true"] {
+            background-color: yellow;
+        }
+
+        .grid input[data-correct="true"] {
+            background-color: green !important;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <label>
+        <h2>Secret word</h2>
+        <input v-model="word" :type="completed ? 'text' : 'password'">
+    </label>
+
+    <hr/>
+
+    <h2>Wordle game</h2>
+    <div ref="grid" class="grid">
+
+        <input
+                data-state="initial"
+                :data-number="number"
+                min="1"
+                maxlength="1"
+                @input="checkInput"
+                v-for="number in (width * height)"
+                :disabled="completed"
+                type="text">
+
+        <div v-if="completed" class="alert alert-success" role="alert">
+            <h3>You rule!</h3>
+
+            Secret word = <b>{{word}}</b>
+        </div>
+
+        <div>
+            <button @click="reset" class="btn btn-danger mt-4">Reset</button>
+        </div>
+    </div>
+
+
+</div>
+
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            message: 'Hello, Vue.js!',
+            word: 'cargo',
+            width: 5,
+            height: 6,
+            completed: false,
+        },
+        methods: {
+            checkInput(event) {
+                const target = event.target;
+                const val = target.value;
+                const next = target.nextSibling;
+
+                let inword = false;
+                let correct = false;
+                let outOfWord = false;
+
+                let numberChar = Number(target.dataset.number) % this.width;
+                if(!numberChar) {
+                    numberChar = this.width;
+                }
+
+                if(val.length) {
+                    if(this.word.includes(val)) {
+                        inword = true;
+                    } else {
+                        outOfWord = true;
+                    }
+
+                    if(val === this.word[numberChar - 1]) {
+                        correct = true;
+                    }
+
+                    if(next) {
+                        next.focus();
+                    }
+                }
+
+                target.dataset.inword = inword ? 'true' : 'false';
+                target.dataset.correct = correct ? 'true' : 'false';
+                target.dataset.outOfWord = outOfWord ? 'true' : 'false';
+
+                this.testLines();
+            },
+            testLines() {
+                const inputs = this.$refs.grid.querySelectorAll('input');
+                let str = '';
+                let lines = [];
+
+                inputs.forEach(function(input) {
+                    let numberChar = Number(input.dataset.number) % this.width;
+                    if(numberChar === 1 && str.length) {
+                        lines.push(str);
+                        str = '';
+                    }
+
+                    str += input.value;
+                }, this);
+
+                lines.forEach(function(line) {
+                    if(line === this.word) {
+                        this.completed = true;
+                    }
+                }, this);
+            },
+            reset() {
+                this.$refs.grid.querySelectorAll('input').forEach(function(input) {
+                    input.value = '';
+                    input.removeAttribute('data-inword');
+                    input.removeAttribute('data-out-of-word');
+                    input.removeAttribute('data-correct');
+                    input.removeAttribute('disabled');
+                    this.completed = false;
+                }, this)
+            }
+        },
+    });
+</script>
+</body>
+</html>
